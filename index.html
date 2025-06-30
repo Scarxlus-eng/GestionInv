@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>La K'zona K'ribean Pizza Gourmet - Admin</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="app">
+        <div class="container">
+            <!-- Header -->
+            <div class="header">
+                <h1><i class="fas fa-pizza-slice"></i> La K'zona K'ribean Pizza Gourmet</h1>
+                <p>Panel de control de gestión de La K'zona K'ribean</p>
+            </div>
+
+            <!-- Navigation Tabs -->
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="products">Productos</button>
+                <button class="tab-btn" data-tab="inventory">Inventario & Ventas</button>
+                <button class="tab-btn" data-tab="tables">Servicio Por Mesa</button>
+                <button class="tab-btn" data-tab="expenses">Gastos</button>
+                <button class="tab-btn" data-tab="reports">Reportes</button>
+            </div>
+
+            <!-- Tab Contents -->
+            <div id="products" class="tab-content active">
+                <div class="grid-2">
+                    <!-- Pizza Flavors -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-pizza-slice"></i> Sabores de Pizza</h3>
+                            <p>Gestiona los sabores disponibles<br>
+                            <small>En Bolsa: $54,000 | En Caja: $56,000 | Por porción: $4,500</small></p>
+                        </div>
+                        <div class="card-content">
+                            <div class="input-group">
+                                <input type="text" id="newFlavorName" placeholder="Nombre del sabor">
+                                <button onclick="addPizzaFlavor()" class="btn-primary">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                            </div>
+                            <div id="pizzaFlavorsList" class="items-list"></div>
+                        </div>
+                    </div>
+
+                    <!-- Drinks -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-coffee"></i> Bebidas</h3>
+                            <p>Gestiona todas las bebidas disponibles</p>
+                        </div>
+                        <div class="card-content">
+                            <div class="sub-tabs">
+                                <button class="sub-tab-btn active" data-subtab="general-drinks">Generales</button>
+                                <button class="sub-tab-btn" data-subtab="personal-sodas">Personales</button>
+                            </div>
+
+                            <!-- General Drinks -->
+                            <div id="general-drinks" class="sub-tab-content active">
+                                <div class="input-group">
+                                    <input type="text" id="newDrinkName" placeholder="Nombre de la bebida">
+                                    <input type="number" id="newDrinkPrice" placeholder="Precio">
+                                    <button onclick="addDrink()" class="btn-primary">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                </div>
+                                <div id="drinksList" class="items-list"></div>
+                            </div>
+
+                            <!-- Personal Sodas -->
+                            <div id="personal-sodas" class="sub-tab-content">
+                                <div class="input-group">
+                                    <input type="text" id="newSodaBrand" placeholder="Marca de gaseosa">
+                                    <input type="number" id="newSodaPrice" placeholder="Precio">
+                                    <button onclick="addPersonalSoda()" class="btn-primary">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                </div>
+                                <div id="personalSodasList" class="items-list"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="inventory" class="tab-content">
+                <div class="grid-3">
+                    <!-- Add Pizza to Inventory -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Agregar Pizza Completa</h3>
+                            <p>Cada pizza tiene 12 porciones</p>
+                        </div>
+                        <div class="card-content">
+                            <div class="form-group">
+                                <label>Cantidad de sabores</label>
+                                <select id="flavorCount" onchange="updateFlavorSelectors()">
+                                    <option value="1">1 sabor (12 porciones)</option>
+                                    <option value="2">2 sabores (6 + 6 porciones)</option>
+                                    <option value="3">3 sabores (3 + 3 + 6 porciones)</option>
+                                    <option value="4">4 sabores (3 + 3 + 3 + 3 porciones)</option>
+                                </select>
+                            </div>
+                            <div id="flavorSelectors"></div>
+                            <div class="form-group">
+                                <select id="pizzaType">
+                                    <option value="local">Para consumir aquí ($54,000)</option>
+                                    <option value="takeaway">Para llevar ($56,000)</option>
+                                </select>
+                            </div>
+                            <button onclick="addPizzaToInventory()" class="btn-primary full-width">
+                                <i class="fas fa-plus"></i> Agregar Pizza
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Pizza Inventory -->
+                    <div class="card span-2">
+                        <div class="card-header">
+                            <h3>Inventario de Pizzas</h3>
+                            <p>Pizzas disponibles y porciones restantes</p>
+                        </div>
+                        <div class="card-content">
+                            <div id="pizzaInventoryList"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sell Drinks -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Vender Bebidas</h3>
+                    </div>
+                    <div class="card-content">
+                        <div class="sub-tabs">
+                            <button class="sub-tab-btn active" data-subtab="sell-general">Generales</button>
+                            <button class="sub-tab-btn" data-subtab="sell-personal">Personales</button>
+                        </div>
+                        <div id="sell-general" class="sub-tab-content active">
+                            <div id="sellGeneralDrinks" class="grid-auto"></div>
+                        </div>
+                        <div id="sell-personal" class="sub-tab-content">
+                            <div id="sellPersonalSodas"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sales List -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Ventas del Día</h3>
+                    </div>
+                    <div class="card-content">
+                        <div id="salesList" class="sales-list"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tables" class="tab-content">
+                <div class="grid-4">
+                    <!-- Tables Grid -->
+                    <div class="card span-3">
+                        <div class="card-header">
+                            <h3>Estado de las Mesas</h3>
+                            <p>Gestiona las 9 mesas disponibles</p>
+                        </div>
+                        <div class="card-content">
+                            <div id="tablesGrid" class="tables-grid"></div>
+                        </div>
+                    </div>
+
+                    <!-- Table Control Panel -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 id="tableControlTitle">Selecciona una Mesa</h3>
+                            <p id="tableControlDesc">Haz clic en una mesa para gestionarla</p>
+                        </div>
+                        <div class="card-content">
+                            <div id="tableControlContent"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Selected Table Orders -->
+                <div id="tableOrdersCard" class="card" style="display: none;">
+                    <div class="card-header">
+                        <h3 id="tableOrdersTitle">Pedidos de Mesa</h3>
+                        <p id="tableOrdersCustomer">Cliente:</p>
+                    </div>
+                    <div class="card-content">
+                        <div id="tableOrdersList"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="expenses" class="tab-content">
+                <div class="grid-2">
+                    <!-- Add Expense -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Registrar Gastos</h3>
+                            <p>Anota todos los gastos del día</p>
+                        </div>
+                        <div class="card-content">
+                            <div class="form-group">
+                                <label>Descripción del gasto</label>
+                                <textarea id="expenseDescription" placeholder="Ej: Ingredientes, gas, servicios, etc."></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label>Monto</label>
+                                <input type="number" id="expenseAmount" placeholder="0">
+                            </div>
+                            <button onclick="addExpense()" class="btn-primary full-width">
+                                <i class="fas fa-plus"></i> Agregar Gasto
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Expenses List -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Gastos del Día</h3>
+                        </div>
+                        <div class="card-content">
+                            <div id="expensesList" class="expenses-list"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="reports" class="tab-content">
+                <!-- Statistics Cards -->
+                <div class="grid-3 mb-6">
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <span>Total Ventas</span>
+                            <i class="fas fa-dollar-sign"></i>
+                        </div>
+                        <div class="stat-value green" id="totalSales">$0</div>
+                        <div class="stat-desc" id="salesCount">0 ventas realizadas</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <span>Total Gastos</span>
+                            <i class="fas fa-minus"></i>
+                        </div>
+                        <div class="stat-value red" id="totalExpenses">$0</div>
+                        <div class="stat-desc" id="expensesCount">0 gastos registrados</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-header">
+                            <span>Ganancia</span>
+                            <i class="fas fa-chart-bar"></i>
+                        </div>
+                        <div class="stat-value" id="profit">$0</div>
+                        <div class="stat-desc" id="profitDesc">Ganancia del día</div>
+                    </div>
+                </div>
+
+                <!-- Generate Report -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Generar Reporte Final</h3>
+                        <p>Genera un reporte completo con todas las estadísticas del día</p>
+                    </div>
+                    <div class="card-content">
+                        <button onclick="generateReport()" class="btn-primary full-width large">
+                            <i class="fas fa-chart-bar"></i> Generar Reporte Completo
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">Modal Title</h3>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                Modal content goes here
+            </div>
+            <div class="modal-footer" id="modalFooter">
+                <button onclick="closeModal()" class="btn-secondary">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
