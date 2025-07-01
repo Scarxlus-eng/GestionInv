@@ -1399,6 +1399,212 @@ function renderExpenses() {
     .join("")
 }
 
+// 1) Estado inicial: agregamos array de reservas
+let state = {
+  // … lo que tenías …
+  reservations: [],   // <— NUEVO
+};
+
+// 2) Funciones de gestión de Inventario: editar/eliminar pizza
+function deletePizzaInventory(id) {
+  if (!confirm("¿Eliminar esta pizza del inventario?")) return;
+  state.pizzaInventory = state.pizzaInventory.filter(p => p.id !== id);
+  renderPizzaInventory();
+  saveState();
+}
+
+function editPizzaInventory(id) {
+  const pizza = state.pizzaInventory.find(p => p.id === id);
+  // abrimos modal para reconfigurar sabores o tipo
+  const body = `
+    <div class="form-group">
+      <label>Tipo</label>
+      <select id="editPizzaType">
+        <option value="local" ${pizza.type==='local'?'selected':''}>Local</option>
+        <option value="takeaway" ${pizza.type==='takeaway'?'selected':''}>Para llevar</option>
+      </select>
+    </div>
+    <!-- Aquí podrías rehacer flavor selectors igual que en addPizzaToInventory -->
+  `;
+  const footer = `<button onclick="savePizzaInventoryEdit('${id}')" class="btn-primary">Guardar</button>`;
+  openModal("Editar Pizza en Inventario", body, footer);
+}
+
+function savePizzaInventoryEdit(id) {
+  const pizza = state.pizzaInventory.find(p=>p.id===id);
+  pizza.type = document.getElementById("editPizzaType").value;
+  // … actualizar sabores si los incluyes …
+  renderPizzaInventory();
+  saveState();
+}
+
+// 3) Render Pizza Inventory: inyectamos botones
+function renderPizzaInventory() {
+  const container = document.getElementById("pizzaInventoryList");
+  if (!state.pizzaInventory.length) {
+    container.innerHTML = '<div class="empty-state">Sin pizzas en inventario.</div>';
+    return;
+  }
+  container.innerHTML = state.pizzaInventory.map(pizza => `
+    <div class="pizza-item">
+      <!-- … tu markup actual … -->
+      <div class="pizza-actions">
+        <!-- Botones Editar / Eliminar -->
+        <button onclick="editPizzaInventory('${pizza.id}')" class="btn-outline btn-sm">
+          <i class="fas fa-edit"></i>
+        </button>
+        <button onclick="deletePizzaInventory('${pizza.id}')" class="btn-danger btn-sm">
+          <i class="fas fa-trash"></i>
+        </button>
+      </div>
+    </div>
+  `).join("");
+}
+
+// 4) Funciones de RESERVAS
+function updateReservationItemForm(existing = null) {
+  const type = document.getElementById("newReservationItemType").value;
+  const container = document.getElementById("reservationItemForm");
+  if (type === "pizza") {
+    container.innerHTML = `
+      <label>Seleccionar Pizza</label>
+      <select id="newReservationPizza">
+        <option value="">–</option>
+        ${state.pizzaInventory.map(p=>`
+          <option value="${p.id}">
+            ${p.flavors.map(f=>f.name).join(", ")} (${p.remainingSlices} disp.)
+          </option>`).join("")}
+      </select>
+    `;
+  } else {
+    container.innerHTML = `
+      <label>Seleccionar Bebida</label>
+      <select id="newReservationDrink">
+        <option value="">–</option>
+        ${state.drinks.filter(d=>d.available).map(d=>`
+          <option value="${d.id}">${d.name} (${formatPrice(d.price)})</option>`).join("")}
+      </select>
+    `;
+  }
+}
+
+function addReservation() {
+  const name = document.getElementById("newReservationName").value.trim();
+  const type = document.getElementById("newReservationItemType").value;
+  const qty = parseInt(document.getElementById("newReservationQuantity").value);
+  const paid = document.getElementById("newReservationPaid").value === "true";
+  let item, price;
+  if (!name) { alert("Nombre requerido"); return; }
+  if (type==="pizza") {
+    const pid = document.getElementById("newReservationPizza").value;
+    const pizza = state.pizzaInventory.find(p=>p.id===pid);
+    if (!pizza || pizza.remainingSlices < qty) { alert("Pizza no disponible"); return; }
+    item = `Pizza: ${pizza.flavors.map(f=>f.name).join(", ")}`;
+    price = pizza.pricePerSlice * qty;
+  } else {
+    const did = document.getElementById("newReservationDrink").value;
+    const drink = state.drinks.find(d=>d.id===did);
+    if (!drink) { alert("Bebida no seleccionada"); return; }
+    item = `Bebida: ${drink.name}`;
+    price = drink.price * qty;
+  }
+  const reservation = {
+    id: generateId(),
+    customer: name,
+    item,
+    quantity: qty,
+    price,
+    paid,
+    timestamp: new Date()
+  };
+  state.reservations.push(reservation);
+  renderReservations();
+  saveState();
+}
+
+function editReservation(id) { /* Similar a editPizzaInventory: abrir modal para ir cambiando campos… */ }
+function saveReservationEdit(id) { /* Guardar cambios en state.reservations… */ }
+function deleteReservation(id) {
+  if (!confirm("Eliminar esta reserva?")) return;
+  state.reservations = state.reservations.filter(r=>r.id!==id);
+  renderReservations();
+  saveState();
+}
+
+function renderReservations() {
+  const container = document.getElementById("reservationsList");
+  if (!state.reservations.length) {
+    container.innerHTML = '<div class="empty-state">No hay reservas.</div>';
+    return;
+  }
+  container.innerHTML = state.reservations.map(r=>`
+    <div class="item">
+      <div class="item-info">
+        <div><strong>${r.customer}</strong> – ${r.item} x${r.quantity}</div>
+        <div>${r.paid ? "✅ Pagado" : "❌ No pagado"}</div>
+      </div>
+      <div class="item-actions">
+        <button onclick="editReservation('${r.id}')" class="btn-outline btn-sm">
+          <i class="fas fa-edit"></i>
+        </button>
+        <button onclick="deleteReservation('${r.id}')" class="btn-danger btn-sm">
+          <i class="fas fa-trash"></i>
+        </button>
+      </div>
+    </div>
+  `).join("");
+}
+
+// 5) Pedidos en MESA: añadir Edit/Delete junto a cada orden
+function renderTableOrders() {
+  // … antes …
+  container.innerHTML = table.orders.map(order=>`
+    <div class="sale-item">
+      <div class="sale-info">
+        <div>${order.item} x${order.quantity}</div>
+        <div>${order.timestamp.toLocaleTimeString()}</div>
+      </div>
+      <div>
+        <button onclick="editTableOrder(${table.id},'${order.id}')" class="btn-outline btn-sm">
+          <i class="fas fa-edit"></i>
+        </button>
+        <button onclick="deleteTableOrder(${table.id},'${order.id}')" class="btn-danger btn-sm">
+          <i class="fas fa-trash"></i>
+        </button>
+        <div class="sale-price">${formatPrice(order.price)}</div>
+      </div>
+    </div>
+  `).join("");
+}
+
+// Funciones auxiliares para editar/borrar
+function deleteTableOrder(tableId, orderId) {
+  const table = state.tables.find(t=>t.id===tableId);
+  if(!confirm("Eliminar este pedido?")) return;
+  const order = table.orders.find(o=>o.id===orderId);
+  table.totalAmount -= order.price;
+  table.orders = table.orders.filter(o=>o.id!==orderId);
+  renderTableOrders(); renderTableControl(); saveState();
+}
+function editTableOrder(tableId, orderId) {
+  // Abrir modal muy parecido a añadir pedido, precargando valores actuales…
+}
+
+// 6) Inicialización: registramos también renderReservations y bind del nuevo subform
+function init() {
+  loadState();
+  initTabs();
+  // … renders previos …
+  renderTableOrders();
+  renderExpenses();
+  updateStatistics();
+  renderReservations();               // NUEVO
+  document.getElementById("newReservationItemType")
+    .addEventListener("change", ()=> updateReservationItemForm());
+}
+
+document.addEventListener("DOMContentLoaded", init);
+
 // Statistics and Reports
 function updateStatistics() {
   const totalSales = state.sales.reduce((sum, sale) => sum + sale.price, 0)
